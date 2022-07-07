@@ -167,7 +167,7 @@ async def get_users(client: Bot, message: Message):
     await msg.edit(f"{len(users)} <b>Total pengguna yang menggunakan bot ini</b>")
 
 
-@Bot.on_message(filters.private & filters.command("broadcast") & filters.user(ADMINS))
+@Bot.on_message(filters.command("broadcast") & filters.user(ADMINS))
 async def send_text(client: Bot, message: Message):
     if message.reply_to_message:
         query = await query_msg()
@@ -179,37 +179,35 @@ async def send_text(client: Bot, message: Message):
         unsuccessful = 0
 
         pls_wait = await message.reply(
-            "<code>Melakukan pesan siaran ke semua pengguna bot...</code>"
+            "<code>Broadcasting Message Tunggu Sebentar...</code>"
         )
         for row in query:
             chat_id = int(row[0])
-            try:
-                await broadcast_msg.copy(chat_id)
-                successful += 1
-            except FloodWait as e:
-                await asyncio.sleep(e.x)
-                await broadcast_msg.copy(chat_id)
-                successful += 1
-            except UserIsBlocked:
-                blocked += 1
-            except InputUserDeactivated:
-                deleted += 1
-            except BaseException:
-                unsuccessful += 1
-            total += 1
-
-        status = f"""<b><u>Berhasil Melakukan Broadcast</u></b>
+            if chat_id not in ADMINS:
+                try:
+                    await broadcast_msg.copy(chat_id)
+                    successful += 1
+                except FloodWait as e:
+                    await asyncio.sleep(e.x)
+                    await broadcast_msg.copy(chat_id)
+                    successful += 1
+                except UserIsBlocked:
+                    blocked += 1
+                except InputUserDeactivated:
+                    deleted += 1
+                except BaseException:
+                    unsuccessful += 1
+                total += 1
+        status = f"""<b><u>Berhasil Broadcast</u>
 Jumlah Pengguna: <code>{total}</code>
 Berhasil: <code>{successful}</code>
 Gagal: <code>{unsuccessful}</code>
 Pengguna diblokir: <code>{blocked}</code>
 Akun Terhapus: <code>{deleted}</code></b>"""
-
         return await pls_wait.edit(status)
-
     else:
         msg = await message.reply(
-            "<code>Mohon maaf silakan reply pesan lalu lakukan dengan /broadcast.</code>"
+            "<code>Gunakan Perintah ini Harus Sambil Reply ke pesan telegram yang ingin di Broadcast.</code>"
         )
         await asyncio.sleep(8)
         await msg.delete()
